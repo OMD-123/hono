@@ -315,6 +315,23 @@ describe('url', () => {
       expect(getQueryParams(url, key)).toEqual([expected, 'second'])
     })
 
+    it('does not match a key across a query separator', () => {
+      // A key must be matched as a whole parameter name, not as a substring
+      // that spans the `&` or `=` separators.
+      expect(getQueryParam('http://example.com/?a&b=3', 'a&b')).toBe(undefined)
+      expect(getQueryParam('http://example.com/?a=b=3', 'a=b')).toBe(undefined)
+
+      // The encoded forms are real single keys and must still resolve.
+      expect(getQueryParam('http://example.com/?a%26b=3', 'a&b')).toBe('3')
+      expect(getQueryParam('http://example.com/?a%3Db=3', 'a=b')).toBe('3')
+
+      // `queries()` and the full result must agree with the keyed lookup.
+      expect(getQueryParams('http://example.com/?a&b=3', 'a&b')).toBe(undefined)
+      expect(getQueryParams('http://example.com/?a=b=3', 'a=b')).toBe(undefined)
+      expect(getQueryParam('http://example.com/?a&b=3')).toEqual({ a: '', b: '3' })
+      expect(getQueryParam('http://example.com/?a=b=3')).toEqual({ a: 'b=3' })
+    })
+
     it('Parse URL query strings', () => {
       expect(getQueryParam('http://example.com/?name=hey', 'name')).toBe('hey')
       expect(getQueryParam('http://example.com/?name=hey#fragment', 'name')).toBe('hey')
